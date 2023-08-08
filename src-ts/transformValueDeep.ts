@@ -4,29 +4,40 @@ type ValueTransformation<T, U> = T extends Array<unknown>
   : U;
 type SingleValueOfArray<T> = { [K in keyof T]: T[K] };
 
+type RecursiveOrSingleValueOfArray<T, X> = T extends Array<unknown> ?
+  | RecursiveOrSingleValueOfArray<T[keyof T], X>
+  | T[keyof T]
+  : T;
+
+
 function transformDeep<X>(
   valueToBeTransformed: null | undefined,
   transformationFunction: TransformFunction<null | undefined, X>
 ): X;
 
-function transformDeep<T, X>(
-  valueToBeTransformed: T,
-  transformationFunction: TransformFunction<T, X>
+function transformDeep<X>(
+  valueToBeTransformed: null | undefined,
+  transformationFunction: RecursiveOrSingleValueOfArray<null | undefined, X>
 ): X;
 
 function transformDeep<T, X>(
   valueToBeTransformed: T,
-  transformationFunction: TransformFunction<T[keyof T], X>
+  transformationFunction: RecursiveOrSingleValueOfArray<T, X>
+): X;
+
+function transformDeep<T, X>(
+  valueToBeTransformed: T,
+  transformationFunction: RecursiveOrSingleValueOfArray<T[keyof T], X>
 ): ValueTransformation<T, X>;
 
 function transformDeep<T, X>(
   valueToBeTransformed: T,
-  transformationFunction: TransformFunction<T[keyof T], X>
+  transformationFunction: RecursiveOrSingleValueOfArray<T[keyof T], X>
 ): T extends object ? { [K in keyof T]: X } : X;
 
 function transformDeep<T, X>(
   valueToBeTransformed: T[keyof T],
-  transformationFunction: TransformFunction<T[keyof T], X>
+  transformationFunction: RecursiveOrSingleValueOfArray<T[keyof T], X>
 ) {
   const typeOfValueToBeTransformed = typeof valueToBeTransformed;
 
@@ -47,6 +58,7 @@ function transformDeep<T, X>(
   }
 
   if (Array.isArray(valueToBeTransformed)) {
+    console.log(valueToBeTransformed)
     const transformedArray = valueToBeTransformed.map(
       (value: SingleValueOfArray<T[keyof T]>) =>
         transformDeep(value, transformationFunction)
@@ -104,10 +116,10 @@ function transformDeep<T, X>(
     },
     {} as {
       [K in keyof T]:
-        | T[keyof T]
-        | ReturnType<typeof transformationFunction>
-        | X
-        | Array<X>;
+      | T[keyof T]
+      | ReturnType<typeof transformationFunction>
+      | X
+      | Array<X>;
     }
   );
 }
